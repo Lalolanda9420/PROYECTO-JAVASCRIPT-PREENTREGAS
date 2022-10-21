@@ -1,3 +1,5 @@
+
+
 // let vacationCalc = document.getElementById('vacationCalc')
 
 
@@ -62,9 +64,10 @@
 //     else if(balance > 0) {
 //       document.getElementById('balance').classList.add('green')
 //     }
-// }
+// } 
+//FIN DE V1
 
-//código nuevo
+//código nuevo V2
 
 const InputDataVacation = new ( function (document){
   this.Destino = document.getElementById('destino');
