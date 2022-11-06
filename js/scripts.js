@@ -1,28 +1,89 @@
+function ConvertToFloat(value){
+  return value?parseFloat(value):0; 
+}
 
+const InputDataVacation = function (document){
+  const Destino = document.getElementById('destino');
+  const Presupuesto = document.getElementById('presupuesto');
+  const Transporte = document.getElementById('transporte');
+  const Alojamiento = document.getElementById('alojamiento');
+  const Comida = document.getElementById('comida');
+  this.FlyDatePicker; 
 
-
-//código nuevo V2
-
-const InputDataVacation = new ( function (document){
-  this.Destino = document.getElementById('destino');
-  this.Presupuesto = document.getElementById('presupuesto');
-  this.Transporte = document.getElementById('transporte');
-  this.Alojamiento = document.getElementById('alojamiento');
-  this.Comida = document.getElementById('comida');
+  const self = this;
 
   this.GetValues =  () =>{
-    return {Destino:this.Destino.value,
-            Presupuesto:ConvertToFloat(this.Presupuesto.value),
-            Transporte:ConvertToFloat(this.Transporte.value),
-            Alojamiento:ConvertToFloat(this.Alojamiento.value),
-            Comida:ConvertToFloat(this.Comida.value)}
+    return {Destino: Destino.value,
+            Presupuesto:ConvertToFloat(Presupuesto.value),
+            Transporte:ConvertToFloat(Transporte.value),
+            Alojamiento:ConvertToFloat(Alojamiento.value),
+            Comida:ConvertToFloat(Comida.value),
+            Vuelo:this.FlyDatePicker.GetCost()
+          }
   }
 
-  function ConvertToFloat(value){
-    return value?parseFloat(value):0; 
+  async function InitFlyDatePicker(event){
+    if(!self.FlyDatePicker){
+      let valuesPerDay = await GetEventsPromise(GetValues);
+      console.log("antes de crear el objeto FlyDatePicker")
+      self.FlyDatePicker = new FlyDatePicker(event.target.id, valuesPerDay)
+      console.log("despues de crear el objeto FlyDatePicker")
+    }
   }
 
-})(document);
+  async function GetValues(resolve)
+  {
+    setTimeout(()=>{
+        resolve(
+          [
+            {
+              start: new Date(2022, 11, 5),
+              end: new Date(2022, 11, 5),
+              text: '$5000',
+              color: 'green'
+            }, 
+            {
+              start: new Date(2022, 11, 23),
+              end: new Date(2022, 11, 24),
+              text: '$14000',
+              color: 'red'
+            },
+            {
+              start: new Date(2022, 11, 12),
+              end: new Date(2022, 11, 12),
+              text: '$14000',
+              color: 'red'
+            },
+            {
+              start: new Date(2022, 11, 11),
+              end: new Date(2022, 11, 11),
+              text: '$5000',
+              color: 'green'
+            },
+            {
+              start: new Date(2022, 11, 27),
+              end: new Date(2022, 11, 27),
+              text: '$14000',
+              color: 'red'
+            }]
+        );
+      }, 1000)
+  }
+  
+  async function GetEventsPromise(eventsGetter)
+  {
+      return new Promise((resolve, reject) => 
+      {
+        eventsGetter(resolve);
+      })
+  };
+
+  //eventos
+  document
+  .getElementById("flyDatePicker")
+  .addEventListener("focus", InitFlyDatePicker);
+
+};
 
 const VacationCalc = new ( function(document){
   
@@ -32,20 +93,27 @@ const VacationCalc = new ( function(document){
     const BtnVerUsuario = document.getElementById('ver_usuario');
     const Result = document.getElementById('result');
     const Usuario = prompt("Escriba su nombre y apellido: ");
-    let self = this;
+    const GetterValues = new InputDataVacation(document);
+    
+    const self = this;
 
-    this.Calculate = data => {
+    this.Calculate = () => {
+        let data = GetterValues.GetValues();
         this.VacationList.push(data);
-        let expenses = data.Alojamiento + data.Transporte + data.Comida;
+        
+        let expenses = data.Alojamiento + 
+                        data.Transporte + 
+                        data.Comida + 
+                        data.Vuelo;
+
         let calc = {Destino:data.Destino,
                     Presupuesto:data.Presupuesto,
                     Balance:data.Presupuesto - expenses}
+        
         this.CalcList.push(calc);
         UI(calc);
     }
     
-
-
     function UI(calc){
       
       let dataPrint = document.createElement('div')
@@ -69,7 +137,8 @@ const VacationCalc = new ( function(document){
 
     function Calculate(e){
         e.preventDefault();
-        self.Calculate(InputDataVacation.GetValues())
+        self.Calculate()
+
     }
 
     function ShowUser(e){
@@ -81,4 +150,65 @@ const VacationCalc = new ( function(document){
     BtnCalc.addEventListener('submit', Calculate);
     BtnVerUsuario.addEventListener('click', ShowUser);
 
-})(document);
+  })(document);
+
+const FlyDatePicker = function (id, dayCosts) {
+  const dayCostList = Array.from(dayCosts);//
+  const selectedInterval = {init:null, fin:null}
+  console.log('despues de la definicion de selectedInterval')
+  const inputDate = document.getElementById(id);
+  const self = this;
+  const VALOR_DEFECTO_VUELO = 4000;
+
+  this.GetCost = () => {
+    let costInit = dayCostList.find(d => SameDay(d.start,selectedInterval.init));
+    costInit = costInit ? GetCostValue(costInit.text) : VALOR_DEFECTO_VUELO;
+    let costFin = dayCostList.find(d => SameDay(d.start,selectedInterval.fin));
+    costFin = costFin ? GetCostValue(costFin.text):VALOR_DEFECTO_VUELO;
+
+    return this.IsSameDay() ? costInit : (costInit + costFin) 
+  }
+
+  this.IsSameDay = () =>{
+    return SameDay(selectedInterval.init,selectedInterval.fin);
+  }
+
+  this.Reset = () =>{
+    selectedInterval.init = null;
+    selectedInterval.fin = null;
+    inputDate.text = "";
+  }
+
+  function SetInterval(event, inst){
+    console.log('antes del seteo de selectedInterval')
+    selectedInterval.init = event.value[0];
+    selectedInterval.fin = event.value[1];
+    console.log('despues del seteo de selectedInterval')
+  }
+  
+  function GetCostValue(value) {
+    return ConvertToFloat(value.replace('$',''));
+  } 
+
+  function SameDay(d1, d2){
+    let date1 = new Date(d1.getFullYear(), d1.getMonth(), d1.getDate());
+    let date2 = new Date(d2.getFullYear(), d2.getMonth(), d2.getDate())
+    return date1.getTime() == date2.getTime();
+  }
+
+  (async(id, dayCosts)=>{
+    mobiscroll.datepicker(`#${id}`, {
+      select: 'range',
+      selectMultiple: true,
+      labels: [...dayCosts],
+      onClose: SetInterval
+    });
+    console.log('despues de la creacion del datepicker')
+  })(id, dayCosts);
+}
+
+
+  
+  
+
+
