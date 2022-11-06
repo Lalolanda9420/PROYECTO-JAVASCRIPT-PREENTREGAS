@@ -1,3 +1,5 @@
+/* version 3.0 simulador*/
+
 function ConvertToFloat(value){
   return value?parseFloat(value):0; 
 }
