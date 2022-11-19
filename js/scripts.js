@@ -1,5 +1,3 @@
-/* version 3.0 simulador*/
-
 function ConvertToFloat(value){
   return value?parseFloat(value):0; 
 }
@@ -23,7 +21,7 @@ const InputDataVacation = function (document){
             Vuelo:this.FlyDatePicker.GetCost()
           }
   }
-
+//Intento de calendario para seleccion de fechas con precios por dia//
   async function InitFlyDatePicker(event){
     if(!self.FlyDatePicker){
       let valuesPerDay = await GetEventsPromise(GetValues);
@@ -35,6 +33,7 @@ const InputDataVacation = function (document){
 
   async function GetValues(resolve)
   {
+    
     setTimeout(()=>{
         resolve(
           [
@@ -70,6 +69,7 @@ const InputDataVacation = function (document){
             }]
         );
       }, 1000)
+ 
   }
   
   async function GetEventsPromise(eventsGetter)
@@ -89,8 +89,6 @@ const InputDataVacation = function (document){
 
 const VacationCalc = new ( function(document){
   
-    this.VacationList = [];
-    this.CalcList = [];
     const BtnCalc = document.getElementById('vacationCalc');
     const BtnVerUsuario = document.getElementById('ver_usuario');
     const Result = document.getElementById('result');
@@ -101,7 +99,7 @@ const VacationCalc = new ( function(document){
 
     this.Calculate = () => {
         let data = GetterValues.GetValues();
-        this.VacationList.push(data);
+        ShoppingCart.AddVacation(data);
         
         let expenses = data.Alojamiento + 
                         data.Transporte + 
@@ -112,28 +110,27 @@ const VacationCalc = new ( function(document){
                     Presupuesto:data.Presupuesto,
                     Balance:data.Presupuesto - expenses}
         
-        this.CalcList.push(calc);
+        ShoppingCart.AddCalc(calc)
         UI(calc);
     }
     
     function UI(calc){
-      
-      let dataPrint = document.createElement('div')
+      // let dataPrint = document.createElement('div')
   
-        dataPrint.innerHTML += `
-          <div class="container-data row">
-            <div class="col s4">
-              <h6>${calc.Destino}</h6>
-            </div>
-            <div class="col s4">
-              <h6>${calc.Presupuesto}</h6>
-            </div>
-            <div class="col s4">
-              <h6 id="balance"><strong>${calc.Balance}</strong></h6> 
-            </div>
-          </div>
-        `
-      Result.appendChild(dataPrint)
+      //   dataPrint.innerHTML += `
+      //     <div class="container-data row">
+      //       <div class="col s4">
+      //         <h6>${calc.Destino}</h6>
+      //       </div>
+      //       <div class="col s4">
+      //         <h6>${calc.Presupuesto}</h6>
+      //       </div>
+      //       <div class="col s4">
+      //         <h6 id="balance"><strong>${calc.Balance}</strong></h6> 
+      //       </div>
+      //     </div>
+      //   `
+      // Result.appendChild(dataPrint)
       BtnCalc.reset();
     }
 
@@ -148,7 +145,7 @@ const VacationCalc = new ( function(document){
       alert(Usuario);
     }
 
-    //eventos
+    //evento
     BtnCalc.addEventListener('submit', Calculate);
     BtnVerUsuario.addEventListener('click', ShowUser);
 
@@ -157,7 +154,6 @@ const VacationCalc = new ( function(document){
 const FlyDatePicker = function (id, dayCosts) {
   const dayCostList = Array.from(dayCosts);//
   const selectedInterval = {init:null, fin:null}
-  console.log('despues de la definicion de selectedInterval')
   const inputDate = document.getElementById(id);
   const self = this;
   const VALOR_DEFECTO_VUELO = 4000;
@@ -182,10 +178,10 @@ const FlyDatePicker = function (id, dayCosts) {
   }
 
   function SetInterval(event, inst){
-    console.log('antes del seteo de selectedInterval')
+    
     selectedInterval.init = event.value[0];
     selectedInterval.fin = event.value[1];
-    console.log('despues del seteo de selectedInterval')
+    
   }
   
   function GetCostValue(value) {
@@ -205,9 +201,143 @@ const FlyDatePicker = function (id, dayCosts) {
       labels: [...dayCosts],
       onClose: SetInterval
     });
-    console.log('despues de la creacion del datepicker')
+    
   })(id, dayCosts);
 }
+//Carrito de compras v1.0 (Al hacer click en carrito, se abre ventana con los datos cargados en el formulario, esta permite borrar presupuesto si se desea)//
+const ShoppingCart = new (function (document){
+
+  let image = document.getElementById("shopping-cart-icon");
+  this.VacationList = [];
+  this.CalcList = [];
+  this.Modal;
+
+  const self = this;
+
+  this.ShowCart = () => {
+    if(!this.Modal)
+      this.Modal = new Modal("shopping-cart-container");
+    
+    this.Modal.Open()
+  }
+
+  this.AddVacation = vacation =>{
+    this.VacationList.push(vacation);
+  }
+
+  this.AddCalc = calc =>{
+    if(!this.Modal)
+      this.Modal = new Modal("shopping-cart-container");
+
+    calc.Id = GetCalcId(calc);
+    this.CalcList.push(calc);
+    this.Modal.Add(calc);
+  }
+
+  this.RemoveCalc = calc => {
+    this.CalcList = this.CalcList.filter(c => c.Id!=calc);
+  }
+
+  function GetCalcId(article) {
+    return `${article.Destino}${article.Presupuesto}${article.Balance}`;
+  }
+
+  function Modal(id){
+    
+    this.ModalHtml;
+    this.ModalObject;
+    const selfModal = this;
+
+    this.Add = article => {
+      this.ModalHtml.querySelector("#products").innerHTML += `<div class="product" id="${article.Id}">
+                                      <span>Destino: ${article.Destino}</span>
+                                      <span>Presupuesto: ${article.Presupuesto}</span>
+                                      <span>Balance: ${article.Balance}</span>
+                                      <i class="fa fa-trash" id="delete-${article.Id}" data-id="${article.Id}"></i>
+                                    </div>`
+      
+      this.ModalHtml.querySelector(`#delete-${article.Id}`).addEventListener("click", Remove);
+    }
+
+    this.Remove = id => {
+      self.RemoveCalc(id)
+      this.ModalHtml.querySelector(`#${id}`).remove()
+    
+    }
+
+    this.Open = () =>{
+      this.ModalObject.show();
+    }
+
+    function Remove(e){
+      selfModal.Remove(e.target.attributes['data-id'].value)
+    }
+
+    (async (document)=>{
+      selfModal.ModalHtml = document.getElementById(id);
+      selfModal.ModalObject = new bootstrap.Modal(selfModal.ModalHtml);
+    })(document)
+
+  }
+
+  function OpenModal(e){
+    self.ShowCart();
+    e.target.id
+  }
+
+  image.addEventListener("click", OpenModal);
+
+})(document);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   

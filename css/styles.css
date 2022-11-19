@@ -3,9 +3,8 @@
   padding: 0;
   box-sizing: border-box;
 }
-.navbar {
- margin: -2.3em 0 7em; 
-}
+
+
 h2 {
   text-align: center;
   color: black;
@@ -15,7 +14,8 @@ body{
   background-color: orange !important;
 }
 
-button {
+
+button{
   background-color: #af4c4c; /* Rojo */
   border: none;
   color: white;
@@ -60,6 +60,7 @@ form .btn {
   cursor: pointer;
   background-color: orange !important;
 }
+/*estilo iconos*/
 .icons {
   width: 100%;
   display: flex;
@@ -74,7 +75,7 @@ form .btn {
 
 }
 .fa-plane {
-  color: white;
+  color: rgb(0, 183, 255);
 }
 .fa-wallet {
   color: #a96d65;
@@ -308,4 +309,13 @@ em.planet.right {
   to {
     transform: rotate(1turn);
   }
+}
+
+
+.modal{
+  background-color: transparent !important;
+  max-height: none !important;
+}
+nav{
+  align-items: center !important;
 }
