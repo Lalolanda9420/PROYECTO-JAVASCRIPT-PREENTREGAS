@@ -119,6 +119,8 @@ const VacationCalc = new ( function(document){
         UI(calc);
     }
     
+
+  //Muestra de resultado en iconos de index
     function UI(calc){
       
       let dataPrint = document.createElement('div')
