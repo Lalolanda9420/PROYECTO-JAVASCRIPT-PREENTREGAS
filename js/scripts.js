@@ -2,6 +2,7 @@ function ConvertToFloat(value){
   return value?parseFloat(value):0; 
 }
 
+//OBJETO PARA LA OBTENCIÓN DE LOS DATOS INGRESADOS POR EL USUARIO.
 const InputDataVacation = function (document){
   const Destino = document.getElementById('destino');
   const Presupuesto = document.getElementById('presupuesto');
@@ -21,22 +22,23 @@ const InputDataVacation = function (document){
             Vuelo:this.FlyDatePicker.GetCost()
           }
   }
-//Intento de calendario para seleccion de fechas con precios por dia//
+
   async function InitFlyDatePicker(event){
     if(!self.FlyDatePicker){
       let valuesPerDay = await GetEventsPromise(GetValues);
-      console.log("antes de crear el objeto FlyDatePicker")
+      //PARSEO DEL JSON OBTENIDO POR EL SIMULADOR DE LA API.
+      valuesPerDay = JSON.parse(valuesPerDay)
+      valuesPerDay = valuesPerDay.map(d => {return {start:new Date(d.start), end:new Date(d.start), text:d.text, color:d.color}})
       self.FlyDatePicker = new FlyDatePicker(event.target.id, valuesPerDay)
-      console.log("despues de crear el objeto FlyDatePicker")
     }
   }
 
-  async function GetValues(resolve)
+  function GetValues(resolve)
   {
     
     setTimeout(()=>{
-        resolve(
-          [
+        resolve(//SERIALIZO OBJETO JSON
+          JSON.stringify([
             {
               start: new Date(2022, 11, 5),
               end: new Date(2022, 11, 5),
@@ -66,12 +68,14 @@ const InputDataVacation = function (document){
               end: new Date(2022, 11, 27),
               text: '$14000',
               color: 'red'
-            }]
+            }])
         );
       }, 1000)
  
   }
   
+  //ENVUELVO CÓDIGO ASÍNCRONO EN UNA PROMESA PARA FORZAR EJECUCIÓN SÍNCRONA MEDIANTE ASYNC/AWAIT.
+  //EL CÓDIGO ASÍNCRONO ES EL CALLBACK eventsGetter
   async function GetEventsPromise(eventsGetter)
   {
       return new Promise((resolve, reject) => 
@@ -80,13 +84,14 @@ const InputDataVacation = function (document){
       })
   };
 
-  //eventos
+  //MANEJO DEL EVENTO FOCUS DEL CAMPO FECHA.
   document
   .getElementById("flyDatePicker")
   .addEventListener("focus", InitFlyDatePicker);
 
 };
 
+//VacationCalc SE CREA EN LA CARGA INICIAL DEL JS.
 const VacationCalc = new ( function(document){
   
     const BtnCalc = document.getElementById('vacationCalc');
@@ -115,6 +120,7 @@ const VacationCalc = new ( function(document){
     }
     
     function UI(calc){
+      
       // let dataPrint = document.createElement('div')
   
       //   dataPrint.innerHTML += `
@@ -145,12 +151,13 @@ const VacationCalc = new ( function(document){
       alert(Usuario);
     }
 
-    //evento
+    //eventos
     BtnCalc.addEventListener('submit', Calculate);
     BtnVerUsuario.addEventListener('click', ShowUser);
 
   })(document);
 
+//"CLASE" FlyDatePicker
 const FlyDatePicker = function (id, dayCosts) {
   const dayCostList = Array.from(dayCosts);//
   const selectedInterval = {init:null, fin:null}
@@ -177,6 +184,7 @@ const FlyDatePicker = function (id, dayCosts) {
     inputDate.text = "";
   }
 
+  //MANEJADOR DEL EVENTO CERRAR DEL DatePicker
   function SetInterval(event, inst){
     
     selectedInterval.init = event.value[0];
@@ -194,6 +202,7 @@ const FlyDatePicker = function (id, dayCosts) {
     return date1.getTime() == date2.getTime();
   }
 
+  //CREACIÓN DEL DATEPICKER
   (async(id, dayCosts)=>{
     mobiscroll.datepicker(`#${id}`, {
       select: 'range',
@@ -204,7 +213,8 @@ const FlyDatePicker = function (id, dayCosts) {
     
   })(id, dayCosts);
 }
-//Carrito de compras v1.0 (Al hacer click en carrito, se abre ventana con los datos cargados en el formulario, esta permite borrar presupuesto si se desea)//
+
+//ShoppingCart SE CREA EN LA CARGA INICIAL DEL JS.
 const ShoppingCart = new (function (document){
 
   let image = document.getElementById("shopping-cart-icon");
@@ -212,7 +222,7 @@ const ShoppingCart = new (function (document){
   this.CalcList = [];
   this.Modal;
 
-  const self = this;
+  const self = this;//CONTEXTO DE ShoppingCart
 
   this.ShowCart = () => {
     if(!this.Modal)
@@ -234,45 +244,52 @@ const ShoppingCart = new (function (document){
     this.Modal.Add(calc);
   }
 
+  //FILTRO LOS DISTINTOS DEL ID RESPECTIVO.
   this.RemoveCalc = calc => {
     this.CalcList = this.CalcList.filter(c => c.Id!=calc);
   }
 
+  //CREACIÓN DEL ID DEL PRESUPUESTO
   function GetCalcId(article) {
     return `${article.Destino}${article.Presupuesto}${article.Balance}`;
   }
 
+  //MODAL DEL CARRITO, SE VISUALIZAN LOS PRESUPUESTOS CARGADOS.
   function Modal(id){
     
     this.ModalHtml;
     this.ModalObject;
-    const selfModal = this;
+    const selfModal = this; //CONTEXTO DE Modal
 
     this.Add = article => {
-      this.ModalHtml.querySelector("#products").innerHTML += `<div class="product" id="${article.Id}">
-                                      <span>Destino: ${article.Destino}</span>
-                                      <span>Presupuesto: ${article.Presupuesto}</span>
-                                      <span>Balance: ${article.Balance}</span>
-                                      <i class="fa fa-trash" id="delete-${article.Id}" data-id="${article.Id}"></i>
-                                    </div>`
-      
+      let calc = document.createElement("div");
+      calc.setAttribute("id",`${article.Id}`);
+      calc.setAttribute("class","product");
+      calc.innerHTML = `<span>Destino: ${article.Destino}</span>
+                        <span>Presupuesto: ${article.Presupuesto}</span>
+                        <span>Balance: ${article.Balance}</span>
+                        <i class="fa fa-trash" id="delete-${article.Id}" data-id="${article.Id}"></i>`
+      this.ModalHtml.querySelector("#products").appendChild(calc);
+      //SETEO DEL EVENTO CLICK DEL TACHITO DEL PRESUPUESTO
       this.ModalHtml.querySelector(`#delete-${article.Id}`).addEventListener("click", Remove);
     }
 
     this.Remove = id => {
       self.RemoveCalc(id)
       this.ModalHtml.querySelector(`#${id}`).remove()
-    
     }
 
+    //ABRO LA MODAL, MÉTODO DE BOOTSTRAP.
     this.Open = () =>{
       this.ModalObject.show();
     }
 
+    //MANEJADOR DEL EVENTO CLICK DEL TACHITO DEL PRESUPUESTO
     function Remove(e){
       selfModal.Remove(e.target.attributes['data-id'].value)
     }
 
+    //FUNCIÓN AUTOINVOCADA QUE SETEA PROPIEDADES DEL OBJETO MODAL
     (async (document)=>{
       selfModal.ModalHtml = document.getElementById(id);
       selfModal.ModalObject = new bootstrap.Modal(selfModal.ModalHtml);
@@ -280,67 +297,13 @@ const ShoppingCart = new (function (document){
 
   }
 
+  //MANEJADOR DE EVENTO CLICK DEL CARRITO
   function OpenModal(e){
     self.ShowCart();
     e.target.id
   }
 
+  //SETEO DE EVENTO CLICK DEL CARRITO
   image.addEventListener("click", OpenModal);
 
 })(document);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  
-
-
